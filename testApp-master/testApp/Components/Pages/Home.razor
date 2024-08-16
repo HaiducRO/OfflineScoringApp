@@ -1,0 +1,289 @@
+﻿@page "/"
+@using ArcheryEntities.Entities
+
+<h1>Hello, world!</h1>
+
+<button class="btn btn-primary" @onclick="IncrementCount">Get ScoreBoard</button>
+
+
+<!-- Modal -->
+@if (showModal && CurrentFinalisScore != null && CurrentArrowScore != null)
+{
+    <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select Score</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    Scoring for :
+                    @CurrentFinalisScore.ArcherName
+
+                    @foreach (var item in Targets)
+                    {
+                        @foreach (var score in item.Scores)
+                        {
+
+                            <button class="btn btn-primary" @onclick="() => SetScore(score,CurrentArrowScore)">@score.Score</button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+ 
+@if (showModalx && CurrentFinalisScore != null && CurrentArrowScore != null)
+{
+    <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Select Score</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    Scoring for :
+                    @CurrentFinalisScore.ArcherName
+
+                    
+
+
+                    @foreach (var item in Targets)
+                    {
+                        @foreach (var score in item.Scores)
+                        {
+                            <button class="btn btn-primary" @onclick="() => SetScorex(score,CurrentArrowScore)">@score.Score</button>
+                        }
+                    }
+    
+
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@if (scoreBoard != null)
+{
+    <p> @scoreBoard.CompetitionName</p>
+    <p> @scoreBoard.DefaultBowCategory?.Name</p>
+    <p> @scoreBoard.Gender</p>
+    <p> @scoreBoard.Category?.Name</p>
+    <p> @scoreBoard.CreatedDate</p>
+
+    @if (scoreBoard.Finalist != null)
+    {
+
+
+        //example code starts here
+        @foreach (var end in scoreBoard.Finalist.First().FinalShootingEnds) // this to add the shooting turns on same target or multiple targets
+        {
+            <button @onclick="()=>SetShootingEnd(end)">@EndSerial(scoreBoard.Finalist.First(), end)</button>
+        }
+
+        @if (currentEnd != null)
+        {
+            @foreach (var item in scoreBoard.Finalist.Where(x => !x.Deleted).OrderByDescending(x => x.TotalScore))
+            {
+                @if (!scoreBoard.FinalScoringTemplate.IsDynamic)
+                {
+                    @if (item.FinalShootingEnds != null)
+                    {
+                        @if (item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores != null)
+                        {
+                            <table class="greenTable">
+                                <tr>
+                                    <td style="text-align: left;" colspan="@item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd)-1).Scores.Count">
+                                        <h5>
+
+                                            <button @onclick="()=>{foreach(var score in item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores){ShowModalx(score,item);};}"> [@EndSerial(item, item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1))]</button>
+                                            
+                                            @($" :{item.ArcherName} [{item.TotalScore}] ({item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).ScoreSum()})")
+                                        </h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    @foreach (var score in item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores)
+                                    {
+                                        <td style="background-color:@score.Color">
+                                            <button class="btn btn-light" @onclick="()=>ShowModal(score,item)"> @score.ToString()</button>
+                                           
+                                        </td>
+
+                                    }
+                                </tr>
+                            </table>
+                        }
+                    }
+                }
+                else
+                {
+                    @if (item.FinalShootingEnds != null)
+                    {
+                        @if (item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores != null)
+                        {
+                            <table class="greenTable">
+                                <tr>
+                                    <td style="text-align: left;" colspan="@item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd)-1).Scores.Count">
+                                        <h5>
+                                            <Button Color="Color.Dark" Size="Size.Medium" class="fas fa-pencil-alt">[@item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Order]</Button>
+
+                                            @($" :{item.ArcherName} [{item.TotalScore}] ({item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).ScoreSum()})")
+                                        </h5>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    @foreach (var score in item.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores)
+                                    {
+                                        <td style="background-color:@score.Color">
+                                            <button class="btn btn-light" @onclick="()=>ShowModal(score,item)"> @score.ToString()</button>
+                                        </td>
+                                    }
+                                </tr>
+                            </table>
+                        }
+                    }
+                }
+            }
+
+        }
+        
+    }
+}
+
+@code {
+    async void SetShootingEnd(ShootingEnd? end)
+    {
+        currentEnd = end;
+    }
+
+    int EndSerial(FinalisScore finalisScore, ShootingEnd end)
+    {
+        return finalisScore.FinalShootingEnds.IndexOf(end) + 1;
+    }
+
+
+
+
+
+    bool showModal = false;
+    bool showModalx = false;
+    double selectedScore;
+
+    ShootingEnd? currentEnd;
+    ConnectionToHub connectionToHub = new ConnectionToHub();
+    FinalScoreBoard? scoreBoard;
+    List<Target> Targets = new List<Target>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await connectionToHub.StartConnection();
+    }
+
+    private async void IncrementCount()
+    {
+        // get the data from the scoar board within this link
+        //https://archerydream.com/ScoreBoard/id/2
+
+        scoreBoard = await connectionToHub.GetFinalScoreBoardAsync();
+        if (scoreBoard != null && scoreBoard.FinalScoringTemplate != null)
+        {
+            if (scoreBoard.Finalist != null)
+            {
+                var archer = scoreBoard.Finalist.First();
+                if (archer.FinalShootingEnds != null)
+                {
+                    foreach (var end in archer.FinalShootingEnds.Where(x => x.Target != null))
+                    {
+                        var target = await connectionToHub.GetTargetByIdAsync(end.Target.Id);
+                        if (target != null)
+                        {
+                            if (!Targets.Any(x => x.Id == target.Id))
+                            {
+                                Targets.Add(target);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        this.StateHasChanged();
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        showModalx = false;
+        StateHasChanged();
+    }
+    public void SetScore(TargetScore newScore, ArrowScore arrowScore)
+    {
+        if (arrowScore != null)
+        {
+            arrowScore.Score = newScore.Score;
+            arrowScore.ScoreText = newScore.Text;
+            arrowScore.Color = newScore.Color;
+            CloseModal();
+        }
+
+    }
+
+    ArrowScore CurrentArrowScore;
+    FinalisScore CurrentFinalisScore;
+    private void ShowModal(ArrowScore arrowScore, FinalisScore finalisScore)
+    {
+        CurrentArrowScore = arrowScore;
+        CurrentFinalisScore = finalisScore;
+        showModal = true;
+
+    }
+
+    private void ShowModalx(ArrowScore arrowScore, FinalisScore finalisScore)
+    {
+        CurrentArrowScore = arrowScore;
+        CurrentFinalisScore = finalisScore;
+        showModalx = true;
+    }
+
+    int totalshots = 0;
+    public void SetScorex(TargetScore newScore ,ArrowScore arrowScore)
+    {
+        foreach (var itm in scoreBoard.Finalist.Where(x => !x.Deleted).OrderByDescending(x => x.TotalScore))
+        {
+
+            foreach (var scr in itm.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores)
+            {
+                for (int j = 0; j < itm.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores.Count; j++)
+                    if (scr.Id == j)
+                    {
+
+                        if (arrowScore != null)
+                        {
+
+                            arrowScore.Score = newScore.Score;
+                            arrowScore.ScoreText = newScore.Text;
+                            arrowScore.Color = newScore.Color;
+
+                        }
+                    }
+                    else
+                    {
+                        scr.Id++;
+                    }
+                if (scr.Id == itm.GetEndByIndex(EndSerial(scoreBoard.Finalist.First(), currentEnd) - 1).Scores.Count)
+                {
+                    CloseModal();
+                }
+            }
+            
+        }
+      
+        
+    }
+     
+    
+}
